@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>个人归档系统</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#fff; --text:#1a1a1a; --sub:#6b7280;
+    --line:#e5e7eb; --brand:#2563eb; --brand-soft:#eff6ff;
+    --ok:#16a34a; --warn:#d97706; --tag:#f3f4f6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+    padding:12px 16px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  h1{font-size:19px;font-weight:700;letter-spacing:-.3px}
+  .stats{
+    display:flex;gap:18px;margin-top:8px;font-size:13px;color:var(--sub);
+  }
+  .stats b{color:var(--text);font-size:15px}
+  .toolbar{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+  input[type=search]{
+    flex:1;min-width:180px;padding:9px 12px;border:1px solid var(--line);
+    border-radius:10px;font-size:14px;outline:none;background:#fff;
+  }
+  input[type=search]:focus{border-color:var(--brand)}
+  .chip{
+    padding:6px 12px;border-radius:999px;font-size:13px;cursor:pointer;
+    border:1px solid var(--line);background:#fff;color:var(--sub);user-select:none;
+    transition:.15s;
+  }
+  .chip:hover{border-color:var(--brand);color:var(--brand)}
+  .chip.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+  main{padding:16px}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.03);
+  }
+  .card-head{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+  .card h2{font-size:16px;font-weight:650;flex:1;min-width:200px;line-height:1.45}
+  .density{font-size:12px;color:var(--warn);white-space:nowrap;font-weight:600}
+  .density span{color:#d1d5db}
+  .badges{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 6px}
+  .badge{font-size:11.5px;padding:2px 9px;border-radius:999px}
+  .badge.pri{background:var(--brand);color:#fff}
+  .badge.cross{background:var(--brand-soft);color:var(--brand);border:1px solid #c7ddfd}
+  .summary{font-size:14px;color:#374151;margin:6px 0 10px}
+  details{border-top:1px dashed var(--line);padding-top:10px}
+  summary{
+    cursor:pointer;font-size:13.5px;font-weight:600;color:var(--brand);
+    list-style:none;display:inline-block;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸ ";font-size:11px}
+  details[open] summary::before{content:"▾ "}
+  .insight{margin-top:12px;font-size:14px;color:#374151}
+  .insight p{margin-bottom:10px;padding-left:4px}
+  .insight .label{
+    display:inline-block;font-weight:700;margin-right:6px;color:var(--text);
+  }
+  .insight .ico{margin-right:4px}
+  .insight .new .label{color:#16a34a}
+  .insight .diff .label{color:#2563eb}
+  .insight .gain .label{color:#7c3aed}
+  .insight .ex .label{color:#d97706}
+  .insight .risk .label{color:#dc2626}
+  .empty{text-align:center;color:var(--sub);padding:60px 20px;font-size:15px}
+  footer{text-align:center;color:var(--sub);font-size:12px;padding:24px 16px 40px}
+  .link{color:var(--brand);text-decoration:none;font-size:12.5px;word-break:break-all}
+  .link:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>个人归档系统 <span style="font-weight:400;font-size:13px;color:var(--sub)">Personal Archive</span></h1>
+    <div class="stats">
+      <div>条目 <b id="s-total">0</b></div>
+      <div>主要分类 <b id="s-pri">0</b></div>
+      <div>交叉分类 <b id="s-cross">0</b></div>
+    </div>
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="搜索标题、摘要、标签…">
+    </div>
+    <div class="toolbar" id="filters"></div>
+  </div>
+</header>
+<main class="wrap" id="list"></main>
+<footer>单一入口 · 内容常新 · 双击本地文件即可浏览</footer>
+
+<script>
+const DATA = [
+  {
+    id:1,
+    title:"EvoMemState：把长期记忆从「存事实」升级到「存状态」",
+    pri:"Personal Agent",
+    cross:["AI记忆系统","论文精读"],
+    density:5,
+    summary:"提出 State-Centric Memory，在持久事实之上显式加入「关系状态」和「推理状态」，解决传统 Fact-Centric 记忆检索不全、用错偏好的问题。",
+    url:"https://mp.weixin.qq.com/s/hKcx5Yfw_RtNg_EKt6ZuxQ",
+    insight:{
+      new:["从 Fact-Centric 转向 State-Centric，显式建模偏好的时效性与冲突关系。"],
+      diff:["旧范式：抽取事实→平铺存储→按相似度检索；新范式：额外维护关系状态（历史/当前/冲突）与推理状态（优先级、约束、调用条件）。"],
+      gain:["完整检索率 85.6%，回答准确率明显跑赢 MemGPT / Mem0 等基线；迎合用户倾向更低；冲突偏好处理更合理。"],
+      ex:["过去爱徒步（历史）、现在爱海滩（当前）、膝盖恢复中（约束）→ 推荐海滩低强度，而不是徒步。"],
+      risk:["本体维护复杂度高；强化学习策略的跨用户泛化性待验证。"]
+    }
+  },
+  {
+    id:2,
+    title:"Personal Agent 是什么：四层架构与三类实现路径",
+    pri:"Personal Agent",
+    cross:["AI记忆系统","产品架构"],
+    density:4,
+    summary:"厘清 Personal Agent 与 Chatbot / Task Agent 的边界，拆解画像建模、记忆、规划、执行四层能力，比较云虚拟机、端侧、自托管三类架构。",
+    url:"https://mp.weixin.qq.com/s/qvY0HI9iFfQ7e4LMTWf0WQ",
+    insight:{
+      new:["把 Personal Agent 定义为「常驻、懂你、能替你办事」的数字分身，而非更强的聊天机器人。"],
+      diff:["Chatbot 一问一答，Task Agent 单次执行；Personal Agent 长周期交互、用户建模、私有数据接入、常驻执行四特征兼备。"],
+      gain:["能力拆成画像建模/记忆/规划/执行四件，便于定位产品短板；云、端、自托管三类架构各有明确取舍。"],
+      ex:["Muse 默认采 31/35 类敏感数据、越权读私信、擅自砍价成交发地址——暴露执行权限的风险。"],
+      risk:["最卷的是记忆，最危险的是执行权限；沙箱默认关闭的自托管方案配置门槛高。"]
+    }
+  },
+  {
+    id:3,
+    title:"硬件入口战：从「随身记录」转向「接管真实工序」",
+    pri:"Personal Agent",
+    cross:["AI硬件","CES观察"],
+    density:4,
+    summary:"CES 2027 信号显示 AI 硬件正在抢占高频上下文入口：输入侧、桌面侧、具身侧、健康侧四条线并进，核心是拿到感知与执行权。",
+    url:"https://mp.weixin.qq.com/s/2z0btu57Z28SI9PoX_jdlQ",
+    insight:{
+      new:["Agent 负责理解与决策，硬件负责感知与执行；谁拿到高频上下文，谁才不被架空。"],
+      diff:["硬件从「记录你做了什么」升级为「替你把某一步做到位」，不再只是数据采集器。"],
+      gain:["两条可复制路径：LOOKI（极客尝鲜→长期记忆黏性→信任变现）、Flic Cue（软件功能简化+硬件外形设计，抢身体空间）。"],
+      ex:["Flic Cue 按住说、松手落地，69 美金众筹超 14 倍，证明「把旧品类某一步做轻做准」也能成立。"],
+      risk:["硬件别只堆数据；别让用户为「创新」多一层负担；大众刚需并非唯一解。"]
+    }
+  },
+  {
+    id:4,
+    title:"Personal Agent 的壁垒：不在模型，在「持续状态」",
+    pri:"Personal Agent",
+    cross:["产品架构","商业模型"],
+    density:4,
+    summary:"能力会快速被拉平，真正沉淀的是长期偏好与任务历史、账号工具与审批规则、可审计可导出可删除的记忆。",
+    url:"https://mp.weixin.qq.com/s/dBa0GkqQOyPy17sdomxp1A",
+    insight:{
+      new:["下一个入口之战不是谁模型更强，而是谁能把「事实+状态+执行权限」做成可信、可审计、可携带的长期基础设施。"],
+      diff:["国内走超级 App 内嵌（微信/飞书/钉钉/淘宝），海外走独立云分身，两条路线收敛于同一问题：用户凭什么一直用。"],
+      gain:["三个未解问题被摆上台面：缺长期适应性评测基准、个性化与通用推理可能互相拉扯、有用性倒逼权限最大化。"],
+      ex:["越用越偏是典型的个性化—通用推理冲突：贴合个人口味的同时，推理能力反而退化。"],
+      risk:["安全只能靠「人工确认最后一击」，把最后一步的审批权留在用户手里。"]
+    }
+  },
+  {
+    id:5,
+    title:"购买决策 ≠ 消费决策：别把付款人当成唯一用户",
+    pri:"用户研究",
+    cross:["消费行为","方法论"],
+    density:5,
+    summary:"把「卖给人」从单一用户视角拆成多角色决策链，付款人、决策者、使用者、否决者往往不是同一个人。",
+    url:"https://mp.weixin.qq.com/s/FmXytEHY-wXHXaQIxG8hqQ",
+    insight:{
+      new:["付款人是交易入口，否决者往往决定生意能走多远——经营上必须分开处理。"],
+      diff:["购买决策聚焦「这笔交易怎么发生」，消费决策覆盖「为什么需要、用完还买不买」，前者影响成交，后者决定生意能否持续。"],
+      gain:["给每个角色配专属信息：购买者看价格/渠道/风险，使用者看体验/门槛，决策者看依据/信任证据，影响者看可转述的叙事。"],
+      ex:["母婴：家长看成分安全，孩子看口味趣味，只讨好一边成交或复购必崩。"],
+      risk:["拉新数据好但复购低，往往不是流量问题，而是使用者体验与购买者判断没接上。"]
+    }
+  },
+  {
+    id:6,
+    title:"能力型记忆与能力资产：让 Agent 越用越会做事",
+    pri:"AI记忆系统",
+    cross:["Personal Agent","商业模型"],
+    density:5,
+    summary:"长期记忆正变成基础能力，真正壁垒在于把协作经验转化成可复用、可验证、可复利的「能力资产」。",
+    url:"https://mp.weixin.qq.com/s/TBzq0rxfNbaxTseB6kk5Ug",
+    insight:{
+      new:["Personal Agent 的终点不是「永远记得我」，而是「和我们越做越会做事」。"],
+      diff:["认知型记忆回答「你是谁、喜欢什么」；能力型记忆回答「面对反复出现的问题，什么方法有效、什么条件下用哪套策略」。"],
+      gain:["三层积累（上下文→经验→能力）加自进化闭环，重复任务可程序化执行，边际交付成本下降；脱敏后的通用方法可成平台公共组件。"],
+      ex:["第一次采购全量推理，几次后把规格比对/优惠计算/保质期判断沉淀成规则，再后来生成周期采购计划，用户只感觉越来越省心。"],
+      risk:["归因难（成功可能是天气好）、反馈稀疏、复用边界（家庭 A 有效≠家庭 B 有效）、权限治理（不能因记住偏好就代表全家决策）。"]
+    }
+  }
+];
+
+const FILTERS = ["全部","Personal Agent","用户研究","AI记忆系统","产品架构","商业模型","AI硬件","方法论","CES观察","消费行为"];
+let cur = "全部", kw = "";
+
+const $ = s => document.querySelector(s);
+const esc = s => s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function stars(n){return '★'.repeat(n)+'<span>'+'★'.repeat(5-n)+'</span>'}
+
+function blocks(o){
+  const map = [
+    ["new","💡 到底新在哪"],["diff","🔍 跟之前差在哪"],["gain","✅ 能带来什么"],
+    ["ex","🎯 一个例子"],["risk","⚠️ 值得留意的隐患"]
+  ];
+  return map.map(([k,label])=>{
+    const v = o[k]; if(!v||!v.length) return "";
+    const cls = k==="risk"?"risk":(k==="ex"?"ex":k);
+    return `<p class="${cls}"><span class="ico"></span><span class="label">${label}：</span>${esc(v.join("；"))}</p>`;
+  }).join("");
+}
+
+function render(){
+  const list = DATA.filter(d=>{
+    const hit = !kw || [d.title,d.summary,...(d.cross||[])].join(" ").toLowerCase().includes(kw);
+    const inCat = cur==="全部" || d.pri===cur || (d.cross||[]).includes(cur);
+    return hit && inCat;
+  }).sort((a,b)=>b.id-a.id);
+
+  $("#list").innerHTML = list.length ? list.map(d=>`
+    <article class="card">
+      <div class="card-head">
+        <h2>${esc(d.title)}</h2>
+        <div class="density">信息浓度 ${stars(d.density)}</div>
+      </div>
+      <div class="badges">
+        <span class="badge pri">${esc(d.pri)}</span>
+        ${(d.cross||[]).map(c=>`<span class="badge cross">${esc(c)}</span>`).join("")}
+      </div>
+      <div class="summary">${esc(d.summary)}</div>
+      <details>
+        <summary>增量速览</summary>
+        <div class="insight">${blocks(d.insight)}
+          <p><a class="link" href="${esc(d.url)}" target="_blank" rel="noopener">查看原文 →</a></p>
+        </div>
+      </details>
+    </article>`).join("")
+  : `<div class="empty">没有匹配的条目，换个关键词试试</div>`;
+}
+
+// 统计
+const crossAll = [...new Set(DATA.flatMap(d=>d.cross||[]))];
+$("#s-total").textContent = DATA.length;
+$("#s-pri").textContent = new Set(DATA.map(d=>d.pri)).size;
+$("#s-cross").textContent = crossAll.length;
+
+// 筛选条
+$("#filters").innerHTML = FILTERS.map(f=>`<span class="chip${f==='全部'?' active':''}" data-f="${f}">${f}</span>`).join("");
+$("#filters").addEventListener("click",e=>{
+  if(!e.target.classList.contains("chip")) return;
+  cur = e.target.dataset.f;
+  [...$("#filters").children].forEach(c=>c.classList.toggle("active",c.dataset.f===cur));
+  render();
+});
+$("#search").addEventListener("input",e=>{kw=e.target.value.trim().toLowerCase();render();});
+
+render();
+</script>
+</body>
+</html>
